@@ -48,7 +48,8 @@ jobs:
         run: |
           npm run build:mac > "$RUNNER_TEMP/sun-build.log" 2>&1 || { grep 'Error:' "$RUNNER_TEMP/sun-build.log" | head -n 5; echo 'Mac package build failed'; exit 1; }
           test -s ../../outputs/sun-desktop/Sun-TV-Mac-universal.dmg
-          lipo -verify_arch x86_64 arm64 '../../outputs/sun-desktop/mac-universal/Sun Launcher.app/Contents/MacOS/Sun Launcher'
+          SUN_ARCHS=$(lipo -archs '../../outputs/sun-desktop/mac-universal/Sun Launcher.app/Contents/MacOS/Sun Launcher')
+          [[ "$SUN_ARCHS" == *x86_64* && "$SUN_ARCHS" == *arm64* ]]
           codesign --verify --deep --strict '../../outputs/sun-desktop/mac-universal/Sun Launcher.app'
           hdiutil verify ../../outputs/sun-desktop/Sun-TV-Mac-universal.dmg
           mkdir -p ../release-assets
