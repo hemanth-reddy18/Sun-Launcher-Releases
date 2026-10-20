@@ -1,0 +1,64 @@
+name: Build macOS download
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Private source commit (40 hexadecimal characters)
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: sun-mac-build
+  cancel-in-progress: false
+jobs:
+  mac:
+    if: github.actor == 'hemanth-reddy18'
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - name: Validate source revision
+        shell: bash
+        env:
+          SUN_SOURCE_REF: ${{ inputs.source_ref }}
+        run: '[[ "$SUN_SOURCE_REF" =~ ^[0-9a-f]{40}$ ]]'
+      - name: Read private source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: hemanth-reddy18/Suntv
+          ref: ${{ inputs.source_ref }}
+          ssh-key: ${{ secrets.SUN_SOURCE_SSH_KEY }}
+          persist-credentials: false
+          path: source
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+      - name: Install pinned dependencies and validate
+        working-directory: source
+        shell: bash
+        run: |
+          npm ci --ignore-scripts > "$RUNNER_TEMP/sun-install.log" 2>&1 || { echo 'Dependency installation failed'; exit 1; }
+          npm test > "$RUNNER_TEMP/sun-tests.log" 2>&1 || { echo 'Source regression checks failed; source logs remain private'; exit 1; }
+          echo 'Pinned dependency installation and regression checks passed'
+      - name: Build universal Mac disk image
+        working-directory: source
+        shell: bash
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          npm run build:mac > "$RUNNER_TEMP/sun-build.log" 2>&1 || { grep 'Error:' "$RUNNER_TEMP/sun-build.log" | head -n 5; echo 'Mac package build failed'; exit 1; }
+          test -s ../../outputs/sun-desktop/Sun-TV-Mac-universal.dmg
+          echo 'Universal DMG created; physical Mac acceptance remains separate'
+      - name: Upload binary only
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: Sun-macOS-universal
+          path: outputs/sun-desktop/Sun-TV-Mac-universal.dmg
+          if-no-files-found: error
+          retention-days: 1
+      - name: Remove private checkout and build logs
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- source
+          rm -f -- "$RUNNER_TEMP/sun-install.log" "$RUNNER_TEMP/sun-tests.log" "$RUNNER_TEMP/sun-build.log"
