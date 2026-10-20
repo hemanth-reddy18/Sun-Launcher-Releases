@@ -53,7 +53,7 @@ jobs:
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: Sun-macOS-universal
-          path: outputs/sun-desktop/Sun-TV-Mac-universal.dmg
+          path: ../outputs/sun-desktop/Sun-TV-Mac-universal.dmg
           if-no-files-found: error
           retention-days: 1
       - name: Remove private checkout and build logs
