@@ -1,0 +1,34 @@
+name: Verify packaged Mac startup
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: Successful Sun Mac build run ID
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+jobs:
+  smoke:
+    if: github.actor == 'hemanth-reddy18'
+    runs-on: macos-15
+    timeout-minutes: 12
+    steps:
+      - name: Download the built DMG
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: Sun-macOS-universal
+          run-id: ${{ inputs.build_run_id }}
+          github-token: ${{ github.token }}
+          path: mac-candidate
+      - name: Verify disk image and run packaged startup twice
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/sun-mac-mount"
+          hdiutil verify mac-candidate/Sun-TV-Mac-universal.dmg
+          hdiutil attach -nobrowse -readonly -mountpoint "$RUNNER_TEMP/sun-mac-mount" mac-candidate/Sun-TV-Mac-universal.dmg
+          ditto "$RUNNER_TEMP/sun-mac-mount/Sun Launcher.app" "$RUNNER_TEMP/Sun Launcher.app"
+          hdiutil detach "$RUNNER_TEMP/sun-mac-mount"
+          codesign --verify --deep --strict "$RUNNER_TEMP/Sun Launcher.app"
+          node -e "const cp=require('node:child_process'),path=require('node:path');for(let n=0;n<2;n++){try{cp.execFileSync(path.join(process.env.RUNNER_TEMP,'Sun Launcher.app/Contents/MacOS/Sun Launcher'),['--smoke-test'],{timeout:45000,stdio:'ignore'});}catch(e){console.error('Packaged Mac startup failed: '+(e.status??e.code));process.exit(1);}}console.log('Two packaged startup and native bridge checks passed. Physical hardware/media tests remain separate.');"
