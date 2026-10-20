@@ -48,12 +48,17 @@ jobs:
         run: |
           npm run build:mac > "$RUNNER_TEMP/sun-build.log" 2>&1 || { grep 'Error:' "$RUNNER_TEMP/sun-build.log" | head -n 5; echo 'Mac package build failed'; exit 1; }
           test -s ../../outputs/sun-desktop/Sun-TV-Mac-universal.dmg
-          echo 'Universal DMG created; physical Mac acceptance remains separate'
+          lipo -verify_arch x86_64 arm64 '../../outputs/sun-desktop/mac-universal/Sun Launcher.app/Contents/MacOS/Sun Launcher'
+          codesign --verify --deep --strict '../../outputs/sun-desktop/mac-universal/Sun Launcher.app'
+          hdiutil verify ../../outputs/sun-desktop/Sun-TV-Mac-universal.dmg
+          mkdir -p ../release-assets
+          cp ../../outputs/sun-desktop/Sun-TV-Mac-universal.dmg ../release-assets/
+          echo 'Universal DMG, architecture and signature structure verified; physical Mac acceptance remains separate'
       - name: Upload binary only
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
           name: Sun-macOS-universal
-          path: ../outputs/sun-desktop/Sun-TV-Mac-universal.dmg
+          path: release-assets/Sun-TV-Mac-universal.dmg
           if-no-files-found: error
           retention-days: 1
       - name: Remove private checkout and build logs
