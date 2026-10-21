@@ -34,7 +34,7 @@ jobs:
           python3 - <<'PY'
           import os,pathlib,subprocess,time,json
           bundle=pathlib.Path(os.environ['RUNNER_TEMP'])/'Sun Launcher.app'
-          report=pathlib.Path('/tmp/sun-desktop-test.json')
+          report=pathlib.Path(os.environ.get('TMPDIR','/tmp'))/'sun-desktop-test.json'
           for attempt in range(2):
               report.unlink(missing_ok=True)
               result=subprocess.run(['/usr/bin/open','-n','-W',str(bundle),'--args','--smoke-test'],timeout=60,capture_output=True,text=True)

@@ -47,7 +47,7 @@ jobs:
               text=text.replace("const u=new URL(request.url);", "diagnostics.record('protocol-request');const u=new URL(request.url);")
               main.write_text(text)
               profile=root/('sun-probe-'+name); profile.mkdir(exist_ok=True)
-              report=pathlib.Path('/tmp/sun-desktop-test.json'); report.unlink(missing_ok=True)
+              report=pathlib.Path(os.environ.get('TMPDIR','/tmp'))/'sun-desktop-test.json'; report.unlink(missing_ok=True)
               try:
                   r=subprocess.run([str(root/'runtime/Electron.app/Contents/MacOS/Electron'),'.','--smoke-test','--enable-logging=stderr'],env={**os.environ,'SUN_PROBE_PROFILE':str(profile)},capture_output=True,text=True,timeout=40)
                   print('Sun startup variant:',name,'exit:',r.returncode,'report:',report.exists())
