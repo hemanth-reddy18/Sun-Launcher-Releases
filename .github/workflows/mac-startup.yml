@@ -62,8 +62,11 @@ jobs:
           r=subprocess.run([str(root/'electron-baseline/Electron.app/Contents/MacOS/Electron'),str(root/'electron-fixture'),'--enable-logging=stderr'],timeout=45,capture_output=True,text=True)
           print('Unmodified Electron GUI baseline exit:',r.returncode)
           candidate=root/'Sun Launcher.app/Contents/Resources/app.asar'
-          r2=subprocess.run([str(root/'electron-baseline/Electron.app/Contents/MacOS/Electron'),str(candidate),'--smoke-test','--enable-logging=stderr'],timeout=45,capture_output=True,text=True)
-          print('Sun source with unmodified runtime exit:',r2.returncode)
+          try:
+              r2=subprocess.run([str(root/'electron-baseline/Electron.app/Contents/MacOS/Electron'),str(candidate),'--smoke-test','--enable-logging=stderr'],timeout=45,capture_output=True,text=True)
+              print('Sun source with unmodified runtime exit:',r2.returncode)
+          except subprocess.TimeoutExpired:
+              print('Sun source with unmodified runtime timed out')
           import hashlib
           for snap in (root/'electron-baseline/Electron.app/Contents/Frameworks/Electron Framework.framework/Resources').glob('*snapshot*'):
               other=root/'Sun Launcher.app/Contents/Frameworks/Electron Framework.framework/Resources'/snap.name
@@ -96,6 +99,11 @@ jobs:
               try:
                   data=json.loads(text.split('\n',1)[1])
                   print(json.dumps({k:data.get(k) for k in ['exception','termination','asi','codeSigningID','codeSigningTeamID']}))
+                  for thread in data.get('threads',[]):
+                      if thread.get('triggered'):
+                          print('Native crashing thread:',thread.get('name'))
+                          for frame in thread.get('frames',[])[:12]:
+                              print('Native frame:',{k:frame.get(k) for k in ['symbol','imageOffset','imageIndex']})
               except Exception:
                   print('Native crash report exists but could not be parsed')
           PY
