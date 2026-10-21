@@ -45,6 +45,25 @@ jobs:
                   raise SystemExit('Packaged native bridge validation failed')
               print('Packaged LaunchServices startup passed:',attempt+1)
           PY
+      - name: Compare the unmodified Electron runtime
+        if: failure()
+        shell: bash
+        run: |
+          arch=$(uname -m)
+          if [ "$arch" = "arm64" ]; then runtime_arch=arm64; else runtime_arch=x64; fi
+          curl --fail --silent --show-error --location "https://github.com/electron/electron/releases/download/v44.9.1/electron-v44.9.1-darwin-$runtime_arch.zip" -o "$RUNNER_TEMP/electron-baseline.zip"
+          mkdir -p "$RUNNER_TEMP/electron-baseline" "$RUNNER_TEMP/electron-fixture"
+          ditto -x -k "$RUNNER_TEMP/electron-baseline.zip" "$RUNNER_TEMP/electron-baseline"
+          printf '%s' '{"name":"startup-fixture","main":"index.cjs"}' > "$RUNNER_TEMP/electron-fixture/package.json"
+          printf '%s' 'const {app,BrowserWindow}=require("electron");app.whenReady().then(()=>{const w=new BrowserWindow({show:false});w.loadURL("data:text/html,baseline");w.webContents.once("did-finish-load",()=>app.exit(0));});' > "$RUNNER_TEMP/electron-fixture/index.cjs"
+          python3 - <<'PY'
+          import os,subprocess,pathlib
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])
+          r=subprocess.run([str(root/'electron-baseline/Electron.app/Contents/MacOS/Electron'),str(root/'electron-fixture'),'--enable-logging=stderr'],timeout=45,capture_output=True,text=True)
+          print('Unmodified Electron GUI baseline exit:',r.returncode)
+          for line in r.stderr.splitlines():
+              if len(line)<1200 and any(x in line for x in ['FATAL','Check failed','ERROR']): print(line)
+          PY
       - name: Native crash category
         if: failure()
         shell: bash
