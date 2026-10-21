@@ -31,7 +31,7 @@ jobs:
           const headers={Authorization:'Bearer '+process.env.SUN_RELEASE_TOKEN};
           const base='https://api.github.com/repos/hemanth-reddy18/Sun-Launcher-Releases';
           const response=await fetch(base+'/releases/418960830',{headers});if(!response.ok)throw Error('Release unavailable');
-          const release=await response.json();if(!release.draft||release.tag_name!=='v0.13.0')throw Error('Expected unpublished preview draft');
+          const release=await response.json();if(!release.draft||release.tag_name!=='v0.14.0')throw Error('Expected unpublished preview draft');
           const file='candidate/Sun-TV-Mac-universal.dmg';const hash=crypto.createHash('sha256');for await(const chunk of fs.createReadStream(file))hash.update(chunk);const digest='sha256:'+hash.digest('hex');
           const old=release.assets.find(a=>a.name==='Sun-TV-Mac-universal.dmg');if(old){const r=await fetch(base+'/releases/assets/'+old.id,{method:'DELETE',headers});if(r.status!==204)throw Error('Old draft asset could not be replaced');}
           const r=await fetch(release.upload_url.replace(/\{.*$/,'')+'?name=Sun-TV-Mac-universal.dmg',{method:'POST',headers:{...headers,'Content-Type':'application/octet-stream'},body:await fs.openAsBlob(file),signal:AbortSignal.timeout(300000)});
