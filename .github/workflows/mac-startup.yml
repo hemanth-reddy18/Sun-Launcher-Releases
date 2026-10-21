@@ -61,6 +61,13 @@ jobs:
           root=pathlib.Path(os.environ['RUNNER_TEMP'])
           r=subprocess.run([str(root/'electron-baseline/Electron.app/Contents/MacOS/Electron'),str(root/'electron-fixture'),'--enable-logging=stderr'],timeout=45,capture_output=True,text=True)
           print('Unmodified Electron GUI baseline exit:',r.returncode)
+          candidate=root/'Sun Launcher.app/Contents/Resources/app.asar'
+          r2=subprocess.run([str(root/'electron-baseline/Electron.app/Contents/MacOS/Electron'),str(candidate),'--smoke-test','--enable-logging=stderr'],timeout=45,capture_output=True,text=True)
+          print('Sun source with unmodified runtime exit:',r2.returncode)
+          import hashlib
+          for snap in (root/'electron-baseline/Electron.app/Contents/Frameworks/Electron Framework.framework/Resources').glob('*snapshot*'):
+              other=root/'Sun Launcher.app/Contents/Frameworks/Electron Framework.framework/Resources'/snap.name
+              print('Snapshot identical:',snap.name,other.exists() and hashlib.sha256(snap.read_bytes()).digest()==hashlib.sha256(other.read_bytes()).digest())
           for line in r.stderr.splitlines():
               if len(line)<1200 and any(x in line for x in ['FATAL','Check failed','ERROR']): print(line)
           PY
