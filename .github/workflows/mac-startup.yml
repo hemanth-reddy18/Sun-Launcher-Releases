@@ -31,7 +31,20 @@ jobs:
           ditto "$RUNNER_TEMP/sun-mac-mount/Sun Launcher.app" "$RUNNER_TEMP/Sun Launcher.app"
           hdiutil detach "$RUNNER_TEMP/sun-mac-mount"
           codesign --verify --deep --strict "$RUNNER_TEMP/Sun Launcher.app"
-          node -e "const cp=require('node:child_process'),path=require('node:path');for(let n=0;n<2;n++){try{cp.execFileSync(path.join(process.env.RUNNER_TEMP,'Sun Launcher.app/Contents/MacOS/Sun Launcher'),['--smoke-test'],{timeout:45000,env:{...process.env,ELECTRON_ENABLE_LOGGING:'1'},stdio:['ignore','pipe','pipe']});}catch(e){console.error('Packaged Mac startup failed: '+(e.status??e.code)+' signal '+e.signal);for(const line of (e.stderr?.toString()||'').split('\n'))if(line.length<500&&/FATAL|Error:|SIG|JIT|code signature/i.test(line))console.log(line);try{const fs=require('node:fs'),os=require('node:os'),s=fs.readFileSync(path.join(os.tmpdir(),'sun-desktop-test.json'),'utf8');console.log(s.slice(0,1200));}catch{console.log('No runtime QA report was created');}process.exit(1);}}console.log('Two packaged startup and native bridge checks passed. Physical hardware/media tests remain separate.');"
+          python3 - <<'PY'
+          import os,pathlib,subprocess,time,json
+          bundle=pathlib.Path(os.environ['RUNNER_TEMP'])/'Sun Launcher.app'
+          report=pathlib.Path('/tmp/sun-desktop-test.json')
+          for attempt in range(2):
+              report.unlink(missing_ok=True)
+              result=subprocess.run(['/usr/bin/open','-n','-W',str(bundle),'--args','--smoke-test'],timeout=60,capture_output=True,text=True)
+              if not report.exists():
+                  raise SystemExit('LaunchServices startup produced no QA report; exit '+str(result.returncode))
+              data=json.loads(report.read_text())
+              if not all(data.get(k) for k in ['desktop','controls','fullscreen','bodyDesktop']):
+                  raise SystemExit('Packaged native bridge validation failed')
+              print('Packaged LaunchServices startup passed:',attempt+1)
+          PY
       - name: Native crash category
         if: failure()
         shell: bash
