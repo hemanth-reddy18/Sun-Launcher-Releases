@@ -1,0 +1,33 @@
+name: Isolate Mac resolver startup
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    if: github.actor == 'hemanth-reddy18'
+    runs-on: macos-15
+    timeout-minutes: 6
+    steps:
+      - name: Compare native startup with resolver configuration
+        shell: bash
+        run: |
+          arch=$(uname -m)
+          if [ "$arch" = "arm64" ]; then runtime_arch=arm64; else runtime_arch=x64; fi
+          curl --fail --silent --show-error --location "https://github.com/electron/electron/releases/download/v44.9.1/electron-v44.9.1-darwin-$runtime_arch.zip" -o "$RUNNER_TEMP/runtime.zip"
+          mkdir -p "$RUNNER_TEMP/runtime" "$RUNNER_TEMP/probe"
+          ditto -x -k "$RUNNER_TEMP/runtime.zip" "$RUNNER_TEMP/runtime"
+          python3 - <<'PY'
+          import pathlib,os,json,subprocess
+          root=pathlib.Path(os.environ['RUNNER_TEMP']); fixture=root/'probe'
+          (fixture/'package.json').write_text(json.dumps({'name':'resolver-probe','main':'index.cjs'}))
+          configs={'system':'','filtered':"app.configureHostResolver({enableBuiltInResolver:true,secureDnsMode:'secure',secureDnsServers:['https://dns.adguard-dns.com/dns-query','https://freedns.controld.com/p2']});"}
+          for name,config in configs.items():
+              (fixture/'index.cjs').write_text('const {app,BrowserWindow}=require("electron");app.whenReady().then(()=>{'+config+'const w=new BrowserWindow({show:false});w.loadURL("data:text/html,probe");w.webContents.once("did-finish-load",()=>app.exit(0));});')
+              try:
+                  r=subprocess.run([str(root/'runtime/Electron.app/Contents/MacOS/Electron'),str(fixture),'--enable-logging=stderr'],capture_output=True,text=True,timeout=40)
+                  print('Resolver probe:',name,'exit:',r.returncode)
+                  for line in r.stderr.splitlines():
+                      if len(line)<1200 and any(x in line for x in ['FATAL','Check failed','ERROR']): print(line)
+              except subprocess.TimeoutExpired: print('Resolver probe:',name,'timeout')
+          PY
