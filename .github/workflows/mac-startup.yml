@@ -49,6 +49,14 @@ jobs:
         if: failure()
         shell: bash
         run: |
+          /usr/bin/lldb --batch -o run -o 'thread backtrace all' -- "$RUNNER_TEMP/Sun Launcher.app/Contents/MacOS/Sun Launcher" --smoke-test > "$RUNNER_TEMP/sun-native-trace.txt" 2>&1 || true
+          python3 - <<'PY'
+          import os,pathlib,re
+          lines=(pathlib.Path(os.environ['RUNNER_TEMP'])/'sun-native-trace.txt').read_text(errors='replace').splitlines()
+          for line in lines:
+              if len(line)<1200 and re.search(r'stop reason|EXC_|SIGTRAP|frame #|error:|FATAL|CHECK failed',line):
+                  print(line)
+          PY
           sleep 8
           python3 - <<'PY'
           import pathlib,json
