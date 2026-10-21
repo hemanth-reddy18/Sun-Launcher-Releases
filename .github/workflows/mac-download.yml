@@ -37,7 +37,7 @@ jobs:
         working-directory: source
         shell: bash
         run: |
-          npm ci --ignore-scripts > "$RUNNER_TEMP/sun-install.log" 2>&1 || { echo 'Dependency installation failed'; exit 1; }
+          npm ci > "$RUNNER_TEMP/sun-install.log" 2>&1 || { echo 'Dependency installation failed'; exit 1; }
           npm test > "$RUNNER_TEMP/sun-tests.log" 2>&1 || { grep -E '^[[:space:]]+at .*test/.*:[0-9]+:[0-9]+' "$RUNNER_TEMP/sun-tests.log" | head -n 4; echo 'Source regression checks failed; source content remains private'; exit 1; }
           echo 'Pinned dependency installation and regression checks passed'
       - name: Build universal Mac disk image
