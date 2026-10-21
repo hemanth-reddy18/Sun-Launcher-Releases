@@ -19,3 +19,5 @@ Revision 0.11 adds Claude, Gemini, Steam, Epic Games and Google Docs vectors fro
 Antigravity: official product favicon, https://antigravity.google/favicon.svg, retrieved 2026-10-21. Google trademark; used unchanged to identify its app. Glass treatment applies to the surrounding tile, not the mark.
 
 Prime Video: original 144px touch icon from https://m.media-amazon.com/images/G/01/digital/video/DVUI/favicons/apple-touch-icon-144x144.png linked by primevideo.com; Amazon trademark. JioHotstar: original icon from https://secure-media.hotstar.com/web-assets/prod/jv-jhs_favicon.ico linked by hotstar.com, losslessly converted to PNG for the asset server. Retrieved 2026-10-21. Marks unchanged; no generated substitutes.
+
+Spotify: `brand-spotify.png` is the original favicon from https://open.spotifycdn.com/cdn/images/favicon32.b64ecc03.png linked by https://open.spotify.com/ (retrieved 2026-10-21). Branding belongs to Spotify AB; no generated or modified mark is claimed.
