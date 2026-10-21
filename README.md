@@ -1,8 +1,14 @@
-# Sun Launcher
+# Sun Launcher 0.14
 
-Desktop downloads will be listed here after build validation.
+## Downloads
 
-- Windows: build candidate under validation.
-- macOS: universal DMG build in progress.
+- [Windows — portable EXE](https://github.com/hemanth-reddy18/Sun-Launcher-Releases/releases/download/v0.14.0/Sun-TV-Windows.exe)
+- [Mac — universal DMG](https://github.com/hemanth-reddy18/Sun-Launcher-Releases/releases/download/v0.14.0/Sun-TV-Mac-universal.dmg)
 
-The application source repository is private. This repository contains release configuration, binary downloads and required third-party notices. Electron binaries contain inspectable application JavaScript. Windows is unsigned; macOS is ad-hoc signed and not notarized. This is a preview workspace, not an operating system replacement or a guarantee of VPN connectivity or universal ad removal.
+Windows: open the EXE. Mac: open the DMG and copy Sun Launcher to Applications. Windows is unsigned; Mac is ad-hoc signed and not notarized, so macOS may require approval in Privacy & Security.
+
+Default web integrations stay inside Sun and share Stage. Explicitly added native programs appear in Stage but retain OS windows. Windows focus/close controls work only for verified supported windows. Ctrl/Cmd + Alt + E returns to Stage when available; shortcut conflicts appear in Settings. Use Settings > Updates for future verified downloads; installation is manual.
+
+This is a workspace preview. VPN tunnelling, universal ad removal, native-app embedding and Dolby Atmos enhancement are not provided. Physical Mac streaming, audio and long-session performance remain unverified.
+
+Source is privately hosted. This public repository contains release configuration, binaries and [component notices](THIRD-PARTY). Electron binaries contain inspectable JavaScript.
